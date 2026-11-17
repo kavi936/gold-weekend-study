@@ -1,0 +1,30 @@
+# Secrets
+.env
+.env.*
+!.env.example
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.venv/
+venv/
+
+# OS / editor
+.DS_Store
+.idea/
+.vscode/
+*.bak
+
+# Raw / regenerable / forward recorder (never commit depth archives or huge caches)
+data/raw/
+data/processed/
+!data/processed/.gitkeep
+data/forward/**
+!data/forward/.gitkeep
+.dukascopy-cache/
+# Pickle caches are 100s of MB — never stage (would break a GitHub push)
+*.pkl

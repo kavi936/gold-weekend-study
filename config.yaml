@@ -1,0 +1,161 @@
+# Gold Weekend Study — descriptive curiosity study configuration
+# Edit values here without changing logic in src/
+
+sample_start: "2025-01-01"
+# Friday of the last weekend in published findings (v1-study freeze).
+# Analysis ignores friday_date > study_end_date; later weekends stay in panel as OOS.
+study_end_date: "2026-11-13"
+
+timezone: "America/New_York"
+friday_close_et: "17:00"
+sunday_reopen_et: "18:00"
+pre_open_offset_min: 5
+gold_gap_primary_min: 15
+gold_gap_sensitivity_min: [5, 60]
+snapback_hours: [1, 4]
+
+normal_basis_lookback_weekdays: 5
+coverage_drop_threshold: 0.05
+dislocation_threshold: 0.0025  # 0.25% for Q3 "who closes the gap"
+crypto_crash_btc_return: -0.05
+regime_split_date: "2026-01-01"
+min_subgroup_n: 10
+
+bootstrap_samples: 10000
+bootstrap_seed: 42
+
+# CoinGecko / known case-study weekends to drop in honesty check (Friday dates)
+known_case_fridays:
+  - "2025-10-17"   # Oct 20 2025 weekend area (adjust if needed)
+  - "2025-12-26"   # Dec 29 2025 weekend
+  - "2026-02-27"   # Feb 28–Mar 1 2026 Iran-strike weekend
+
+# US / gold-market holiday dates that make 3-day weekends (exclude from main; show separately)
+# Format: YYYY-MM-DD of the observed holiday that shortens the gold week
+holidays:
+  - "2025-01-01"   # New Year
+  - "2025-01-20"   # MLK
+  - "2025-02-17"   # Presidents
+  - "2025-04-18"   # Good Friday
+  - "2025-05-26"   # Memorial
+  - "2025-06-19"   # Juneteenth
+  - "2025-07-04"   # Independence
+  - "2025-09-01"   # Labor
+  - "2025-11-27"   # Thanksgiving
+  - "2025-12-25"   # Christmas
+  - "2026-01-01"
+  - "2026-01-19"
+  - "2026-02-16"
+  - "2026-04-03"   # Good Friday
+  - "2026-05-25"
+  - "2026-06-19"
+  - "2026-07-03"   # Independence observed
+  - "2026-09-07"
+  - "2026-11-26"
+  - "2026-12-25"
+
+venues:
+  - venue: binance
+    token: PAXG
+    symbol: PAXGUSDT
+    quote: USDT
+  - venue: okx
+    token: XAUT
+    symbol: XAUT-USDT
+    quote: USDT
+  - venue: okx
+    token: PAXG
+    symbol: PAXG-USDT
+    quote: USDT
+  - venue: bybit
+    token: XAUT
+    symbol: XAUTUSDT
+    quote: USDT
+  - venue: bybit
+    token: PAXG
+    symbol: PAXGUSDT
+    quote: USDT
+  - venue: kraken
+    token: PAXG
+    symbol: PAXGUSD
+    quote: USD
+
+paths:
+  raw: data/raw
+  processed: data/processed
+  reports: reports
+  figures: reports/figures
+  forward: data/forward
+  events: data/events.csv
+
+recorder:
+  depth_levels: 20
+  snapshot_interval_sec: 10
+  window_start_et: "16:00"   # Friday
+  window_end_et: "02:00"     # Monday
+  # Bybit removed: HTTP 403 geo-block from this location (documented RESEARCH_LOG).
+  venues:
+    - binance
+    - okx
+    - hyperliquid
+  tokens: [XAUT, PAXG]
+  # Binance USD-M forceOrder symbols to try (skip + log if not listed)
+  binance_perp_symbols:
+    - XAUTUSDT
+    - PAXGUSDT
+  use_certifi_ssl: true  # macOS CERTIFICATE_VERIFY_FAILED fix
+
+binance:
+  # v2.1: only data-api.binance.vision. Do NOT fall back to api.binance.us (different venue)
+  # or mix hosts. If vision fails, drop Binance rows rather than blending exchanges.
+  # Binance.US would be a separate venue id `binance_us` if ever added.
+  bases:
+    - "https://data-api.binance.vision"
+  klines_path: "/api/v3/klines"
+  limit: 1000
+  drop_on_host_failure: true
+
+okx:
+  base: "https://www.okx.com"
+  history_candles: "/api/v5/market/history-candles"
+  limit: 300
+
+bybit:
+  base: "https://api.bybit.com"
+  kline_path: "/v5/market/kline"
+  limit: 1000
+
+kraken:
+  # REST OHLC only keeps ~720 bars — use public OHLCVT zip downloads for history.
+  # Docs: https://support.kraken.com/articles/360047543791-Downloadable-historical-OHLCVT-Open-High-Low-Close-Volume-Trades-data
+  ohlcvt_base: "https://charts-api.kraken.com"
+  rest_ohlc: "https://api.kraken.com/0/public/OHLC"
+  pair_paxg: "PAXGUSD"
+  pair_usdt: "USDTZUSD"
+  pair_usdc: "USDCUSD"  # Kraken altname; USDCZUSD is invalid
+
+bitstamp:
+  # Docs: https://www.bitstamp.net/api/#tag/Market-info/operation/GetOHLCData
+  # Primary source for full-history USDT/USD and USDC/USD 1-min (v2 fix).
+  pairs:
+    USDT: usdtusd
+    USDC: usdcusd
+
+stale_trade_max_min: 10
+snapshot_window_min: 5  # ±5 min median closes; pre-open uses 10 min before reopen−5
+point_price_sensitivity: true  # also store single-minute prices for sensitivity
+
+dukascopy:
+  # Public 1-min bid candles: https://www.dukascopy.com/swiss/english/marketwatch/historical/
+  # Pattern used by dukascopy-node: https://datafeed.dukascopy.com/datafeed/XAUUSD/YYYY/MM/DD/BID_candles_min_1.bi5
+  instrument: XAUUSD
+  datafeed: "https://datafeed.dukascopy.com/datafeed"
+
+yfinance:
+  symbol: "GC=F"
+
+gdelt:
+  # Doc API: https://blog.gdeltproject.org/gdelt-doc-2-0-api-debuts/
+  doc_api: "https://api.gdeltproject.org/api/v2/doc/doc"
+  query: "(gold OR XAU OR Fed OR FOMC OR tariff OR geopolitics OR Iran OR Israel) sourcelang:english"
+  news_count_threshold: 80
